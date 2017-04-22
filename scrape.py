@@ -3,6 +3,7 @@ import requests
 import dataset
 import os
 import re
+from tqdm import tqdm
 
 # Number of seconds to sleep between crawls
 CRAWL_TIMEOUT = 10
@@ -22,6 +23,7 @@ def upsert_all_apps():
     apps = json['applist']['apps']['app']
 
     for app in apps:
+    for app in tqdm(apps):
         db['game'].upsert({
             'steam_app_id': app['appid'],
             'game_name': app['name'],
