@@ -38,7 +38,13 @@ def scrape_store_page(app_id):
     '''
     results = {}
     driver = webdriver.Chrome()
-    driver.get("http://store.steampowered.com/app/{}".format(app_id))
+    store_base_url = "http://store.steampowered.com"
+    app_url = "{}/app/{}".format(store_base_url, app_id)
+    driver.get(app_url)
+
+    if driver.current_url in (store_base_url, '{}/'.format(store_base_url)):
+        # We were redirected; the app doesn't have a store page.
+        return results
 
     results['game_name'] = (driver
                             .find_element_by_class_name('apphub_AppName')
