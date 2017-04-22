@@ -100,7 +100,11 @@ def do_crawl(app_ids, db):
     and append the results to our list of crawls in the database.
     '''
     for app_id in app_ids:
-        results = scrape_store_page(app_id)
+        try:
+            results = scrape_store_page(app_id)
+        except:
+            print("Failed crawl for ID {}".format(app_id))
+            raise
 
         db['game_crawl'].insert(results)
 
