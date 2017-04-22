@@ -13,7 +13,7 @@ ALL_TIME_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews fo
 DETAILS_BOX_REGEX = re.compile(r'^Title: ([^\n]+)\nGenre: ([^\n]+)\nDeveloper: ([^\n]+)\nPublisher: ([^\n]+)')
 NUM_ACHIEVEMENTS_REGEX = re.compile(r'Includes ([,[0-9]+) Steam Achievements')
 
-def upsert_all_apps():
+def upsert_all_apps(db):
     '''
     Get the full list of steam apps and upsert them in our database
     on the basis of steam's app ID.
@@ -113,7 +113,7 @@ def run():
     # Since we're not super worried about having an up-to-date list of apps,
     # run this only if the table is empty
     if db['game'].count() == 0:
-        upsert_all_apps()
+        upsert_all_apps(db)
 
     # For now, just crawl the apps we don't already have
     missing_crawl_query = '''
@@ -129,7 +129,7 @@ def run():
     # TODO remove after we're done testing the crawl function
     missing_app_ids = missing_app_ids[:1]
 
-    do_crawl(missing_app_ids)
+    do_crawl(missing_app_ids, db)
 
 
 if __name__ == '__main__':
