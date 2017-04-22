@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS game;
+DROP TABLE IF EXISTS game CASCADE;
 
 CREATE TABLE game (
     steam_app_id int,
@@ -7,7 +7,7 @@ CREATE TABLE game (
     CONSTRAINT game_pk PRIMARY KEY (steam_app_id)
 );
 
-DROP TABLE IF EXISTS game_crawl;
+DROP TABLE IF EXISTS game_crawl CASCADE;
 
 CREATE TABLE game_crawl (
     steam_app_id int,
@@ -31,8 +31,7 @@ CREATE TABLE game_crawl (
     CONSTRAINT game_game_crawl_fk FOREIGN KEY (steam_app_id)
         REFERENCES game (steam_app_id)
 );
-
-DROP TABLE IF EXISTS steam_tag;
+DROP TABLE IF EXISTS steam_tag CASCADE;
 
 CREATE TABLE steam_tag (
     tag_id serial,
@@ -42,7 +41,7 @@ CREATE TABLE steam_tag (
     CONSTRAINT steam_tag_descr_uniq UNIQUE (descr)
 );
 
-DROP TABLE IF EXISTS game_crawl_tag;
+DROP TABLE IF EXISTS game_crawl_tag CASCADE;
 
 CREATE TABLE game_crawl_tag (
     steam_app_id int,
@@ -54,9 +53,9 @@ CREATE TABLE game_crawl_tag (
         REFERENCES game_crawl (steam_app_id, crawl_time),
     CONSTRAINT steam_tag_game_crawl_tag_fk FOREIGN KEY (tag_id)
         REFERENCES steam_tag (tag_id)
-)
+);
 
-DROP TABLE IF EXISTS steam_game_detail;
+DROP TABLE IF EXISTS steam_game_detail CASCADE;
 
 CREATE TABLE steam_game_detail (
      detail_id serial,
@@ -66,7 +65,7 @@ CREATE TABLE steam_game_detail (
     CONSTRAINT steam_game_detail_descr_uniq UNIQUE (descr)
 );
 
-DROP TABLE IF EXISTS game_crawl_detail;
+DROP TABLE IF EXISTS game_crawl_detail CASCADE;
 
 CREATE TABLE game_crawl_detail (
     steam_app_id int,
@@ -76,8 +75,8 @@ CREATE TABLE game_crawl_detail (
     CONSTRAINT game_crawl_detail_pk PRIMARY KEY (steam_app_id, crawl_time, detail_id),
     CONSTRAINT game_crawl_game_crawl_detail_fk FOREIGN KEY (steam_app_id, crawl_time)
         REFERENCES game_crawl (steam_app_id, crawl_time),
-    CONSTRAINT steam_detail_game_crawl_detail_fk FOREIGN KEY (detail_id)
-        REFERENCES steam_detail (detail_id)
+    CONSTRAINT steam_game_detail_game_crawl_detail_fk FOREIGN KEY (detail_id)
+        REFERENCES steam_game_detail (detail_id)
 );
 
 
