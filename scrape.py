@@ -22,12 +22,15 @@ def upsert_all_apps():
 
     apps = json['applist']['apps']['app']
 
-    for app in apps:
+    db.begin()
+
     for app in tqdm(apps):
         db['game'].upsert({
             'steam_app_id': app['appid'],
             'game_name': app['name'],
         }, keys=['app_id'])
+
+    db.commit()
 
 def scrape_store_page(app_id):
     '''
