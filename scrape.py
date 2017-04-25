@@ -242,9 +242,9 @@ def do_crawl(app_ids, db):
     # http://stackoverflow.com/questions/1112343/how-do-i-capture-sigint-in-python#comment68802096_1112357
     should_quit = False
 
-    db.begin()
     for app_id in tqdm(app_ids):
         try:
+            db.begin()
             if should_quit:
                 break
 
@@ -305,16 +305,15 @@ def do_crawl(app_ids, db):
                     app_id=app_id,
                     crawl_time=crawl_time
                 )
-
-        except KeyboardInterrupt:
-            # Handle this without raising; want to make sure we get our commit
-            # in before exiting
-            should_quit = True
+            db.commit()
         except Exception as e:
-            print('Failed to load app ID {}; continuing'.format(app_id))
             # Problem app; pass along our failure and continue to the next one
+            print('Failed to load app ID {}; continuing'.format(app_id))
             traceback.print_exc()
-    db.commit()
+
+            # Ensure Postgres lets us continue by rolling back the current transaction
+            db.rollback()
+
 
 
 def run():
