@@ -47,11 +47,6 @@ def scrape_store_page(app_id):
     driver.get(app_url)
 
     try:
-        if driver.current_url in (store_base_url, '{}/'.format(store_base_url)):
-            # We were redirected; the app doesn't have a store page.
-            driver.close()
-            return results
-
         try:
             # If this succeeds, we need to pass through the age gate.
             driver.find_element_by_id('agegate_box')
@@ -68,6 +63,15 @@ def scrape_store_page(app_id):
         except NoSuchElementException:
             # No age gate; we're good to continue
             pass
+
+        if driver.current_url in (store_base_url, '{}/'.format(store_base_url)):
+            # We were redirected; the app doesn't have a store page.
+            driver.close()
+            return results
+        elif 'store.steampowered.com/video' in driver.current_url:
+            # This is a trailer for something else; we'll get the actual app later.
+            driver.close()
+            return results
 
         # Get the description first, since it tells us whether the app is streaming video
         # (which means we don't care about it)
