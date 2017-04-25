@@ -85,6 +85,17 @@ def scrape_store_page(app_id):
         except NoSuchElementException:
             pass
 
+        try:
+            # If this succeeds, Chrome is showing us an error
+            error_element = driver.find_element_by_class('error-code')
+            if error_element.text == 'ERR_TOO_MANY_REDIRECTS':
+                # Something wonky with the server response for this store page;
+                # it's redirecting infinitely to itself.  Ignore it
+                driver.close()
+                return results
+        except NoSuchElementException:
+            pass
+
         # Get the description first, since it tells us whether the app is streaming video
         # (which means we don't care about it)
         descriptions = driver.find_elements_by_class_name('game_area_description')
