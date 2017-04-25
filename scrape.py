@@ -47,6 +47,7 @@ def scrape_store_page(app_id):
 
     if driver.current_url in (store_base_url, '{}/'.format(store_base_url)):
         # We were redirected; the app doesn't have a store page.
+        driver.close()
         return results
 
     try:
@@ -156,6 +157,8 @@ def scrape_store_page(app_id):
     tag_elements = driver.find_elements_by_css_selector('#app_tagging_modal a.app_tag')
     for element in tag_elements:
         results['tags'].append(element.text)
+
+    driver.close()
 
     return results
 
