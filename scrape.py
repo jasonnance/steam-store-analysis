@@ -11,6 +11,8 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException
 from dateutil.parser import parse as dtparse
 
+# TODO: don't reinstantiate the driver every time
+
 # Number of seconds to sleep between crawls
 CRAWL_TIMEOUT = 10
 
@@ -42,6 +44,7 @@ def scrape_store_page(app_id):
     '''
     Extract all the information we can from the store page for a given app ID.
     '''
+    # TODO (maybe): add "ignore_reason" field to track why we skipped an app
     results = {'steam_app_id': app_id}
     driver = webdriver.Chrome()
     store_base_url = "http://store.steampowered.com"
