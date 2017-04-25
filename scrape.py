@@ -1,6 +1,7 @@
 import requests
 import dataset
 import os
+import sys
 import re
 import datetime as dt
 import time
@@ -334,7 +335,7 @@ def do_crawl(app_ids, db):
             db.commit()
         except Exception as e:
             # Problem app; pass along our failure and continue to the next one
-            print('Failed to load app ID {}; continuing'.format(app_id))
+            print('Failed to load app ID {}; continuing'.format(app_id), file=sys.stderr)
             traceback.print_exc()
 
             # Ensure Postgres lets us continue by rolling back the current transaction
