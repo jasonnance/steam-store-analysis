@@ -119,7 +119,8 @@ def scrape_store_page(app_id):
     details_text = driver.find_elements_by_class_name('details_block')[0].text
     details_match = DETAILS_BOX_REGEX.match(details_text)
     results['title'] = details_match.group(1)
-    results['genre'] = details_match.group(2)
+    raw_genre = details_match.group(2)
+    results['genres'] = raw_genre.split(', ')
     results['developer'] = details_match.group(3)
     results['publisher'] = details_match.group(4)
 
@@ -166,6 +167,29 @@ def scrape_store_page(app_id):
 
     return results
 
+def insert_with_mapping(*, descrs, entity_table, pk_name, join_table, mapping, app_id, crawl_time):
+    '''
+    Given some list of description data, a table of entities, the name of the PK,
+    a many-to-many join table for the entities to game crawls,
+    a mapping from descrs to entity table IDs, and an app_id/crawl_time,
+    update the entity table/mapping if necessary and insert
+    the entity in the many-to-many join table.
+
+    Mutates the mapping.
+    '''
+    for descr in descrs:
+        try:
+            entity_id = mapping[descr]
+        except KeyError:
+            entity_id = db[entity_table]
+            mapping[descr] = entity_id
+
+        db[join_table].insert({
+            'steam_app_id': app_id,
+            'crawl_time': crawl_time,
+            pk_name: entity_id,
+        })
+
 def do_crawl(app_ids, db):
     '''
     Given a list of steam app IDs and a db connection, do a crawl for the app IDs
@@ -173,6 +197,7 @@ def do_crawl(app_ids, db):
     '''
     tag_mapping = {r['descr']: r['tag_id'] for r in db['steam_tag'].find()}
     detail_mapping = {r['descr']: r['detail_id'] for r in db['steam_game_detail'].find()}
+    genre_mapping = {r['descr']: r['genre_id'] for r in db['steam_genre'].find()}
 
     db.begin()
     for app_id in tqdm(app_ids):
@@ -186,38 +211,45 @@ def do_crawl(app_ids, db):
         crawl_time = dt.datetime.now()
         results['crawl_time'] = crawl_time
 
+        # Pull the lists off before we insert the main crawl record.
         tags = results['tags']
         del results['tags']
         details = results['game_details']
         del results['game_details']
+        genres = results['genres']
+        del results['genres']
 
         db['game_crawl'].insert(results)
 
-        for tag in tags:
-            try:
-                tag_id = tag_mapping[tag]
-            except KeyError:
-                tag_id = db['steam_tag'].insert({'descr': tag})
-                tag_mapping[tag] = tag_id
+        insert_with_mapping(
+            descrs=tags,
+            entity_table='steam_tag',
+            pk_name='tag_id',
+            join_table='game_crawl_tag',
+            mapping=tag_mapping,
+            app_id=app_id,
+            crawl_time=crawl_time
+        )
 
-            db['game_crawl_tag'].insert({
-                'steam_app_id': app_id,
-                'crawl_time': crawl_time,
-                'tag_id': tag_id
-            })
+        insert_with_mapping(
+            descrs=details,
+            entity_table='steam_game_detail',
+            pk_name='detail_id',
+            join_table='game_crawl_detail',
+            mapping=detail_mapping,
+            app_id=app_id,
+            crawl_time=crawl_time
+        )
 
-        for detail in details:
-            try:
-                detail_id = detail_mapping[detail]
-            except KeyError:
-                detail_id = db['steam_game_detail'].insert({'descr': detail})
-                detail_mapping[detail] = detail_id
-
-            db['game_crawl_detail'].insert({
-                'steam_app_id': app_id,
-                'crawl_time': crawl_time,
-                'detail_id': detail_id
-            })
+        insert_with_mapping(
+            descrs=genres,
+            entity_table='steam_genre',
+            pk_name='genre_id',
+            join_table='game_crawl_genre',
+            mapping=genre_mapping,
+            app_id=app_id,
+            crawl_time=crawl_time
+        )
 
         time.sleep(CRAWL_TIMEOUT)
     db.commit()
