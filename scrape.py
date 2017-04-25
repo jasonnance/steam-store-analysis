@@ -88,6 +88,10 @@ def scrape_store_page(app_id):
                 # This is streaming video; we don't care about it, so just return
                 driver.close()
                 return results
+            elif description.text.startswith('ABOUT THIS SOFTWARE'):
+                # This is computer software; ignore it
+                driver.close()
+                return results
         if 'long_description' not in results:
             raise RuntimeError('Unable to parse description for app_id {}'.format(app_id))
 
