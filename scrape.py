@@ -148,7 +148,9 @@ def scrape_store_page(app_id):
                 results['num_achievements'] = int(num_achievements_match.group(1))
 
         try:
-            results['metacritic_score'] = int(driver.find_element_by_class_name('score').text)
+            raw_metacritic_score = driver.find_element_by_class_name('score').text
+            if raw_metacritic_score != 'NA':
+                results['metacritic_score'] = int(raw_metacritic_score)
         except NoSuchElementException:
             # Some games don't have metascores
             pass
