@@ -148,7 +148,7 @@ def scrape_store_page(app_id):
         try:
             # Not on sale or Free to Play
             raw_price = driver.find_element_by_class_name('game_purchase_price').text
-            if raw_price == 'Free to Play':
+            if raw_price in ('Free to Play', 'Free'):
                 price = 0
             else:
                 price = float(raw_price.replace('$', ''))
