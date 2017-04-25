@@ -116,7 +116,8 @@ def scrape_store_page(app_id):
 
     results['release_date'] = driver.find_element_by_css_selector('.release_date .date').text
 
-    details_text = driver.find_elements_by_class_name('details_block')[0].text
+    # There's additional detail about VR stuff here, but we're not worried about that for now
+    details_text = driver.find_elements_by_css_selector('.details_block:not(.vrsupport)')[0].text
     details_match = DETAILS_BOX_REGEX.match(details_text)
     results['title'] = details_match.group(1)
     raw_genre = details_match.group(2)
