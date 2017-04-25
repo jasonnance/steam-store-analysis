@@ -14,13 +14,13 @@ CREATE TABLE game_crawl (
     crawl_time timestamp with time zone DEFAULT (now() at time zone 'utc'),
     game_name text,
     short_description text,
+    is_dlc boolean,
     reviews_last_30_days int,
     pct_positive_reviews_last_30_days real,
     reviews_all_time int,
     pct_positive_reviews_all_time real,
     release_date date,
     title text,
-    genre text,
     developer text,
     publisher text,
     num_achievements int,
@@ -32,6 +32,31 @@ CREATE TABLE game_crawl (
     CONSTRAINT game_game_crawl_fk FOREIGN KEY (steam_app_id)
         REFERENCES game (steam_app_id)
 );
+
+DROP TABLE IF EXISTS steam_genre CASCADE;
+
+CREATE TABLE steam_genre (
+    genre_id serial,
+    descr text,
+
+    CONSTRAINT steam_genre_pk PRIMARY KEY (genre_id),
+    CONSTRAINT steam_genre_descr_uniq UNIQUE (descr)
+);
+
+DROP TABLE IF EXISTS game_crawl_genre CASCADE;
+
+CREATE TABLE game_crawl_genre (
+    steam_app_id int,
+    crawl_time timestamp with time zone,
+    genre_id int,
+
+    CONSTRAINT game_crawl_genre_pk PRIMARY KEY (steam_app_id, crawl_time, genre_id),
+    CONSTRAINT game_crawl_game_crawl_genre_fk FOREIGN KEY (steam_app_id, crawl_time)
+        REFERENCES game_crawl (steam_app_id, crawl_time),
+    CONSTRAINT steam_genre_game_crawl_genre_fk FOREIGN KEY (genre_id)
+        REFERENCES steam_genre (genre_id)
+);
+
 DROP TABLE IF EXISTS steam_tag CASCADE;
 
 CREATE TABLE steam_tag (
