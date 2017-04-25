@@ -8,6 +8,7 @@ import traceback
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException
+from dateutil.parser import parse as dtparse
 
 # Number of seconds to sleep between crawls
 CRAWL_TIMEOUT = 10
@@ -121,7 +122,7 @@ def scrape_store_page(app_id):
                     results['reviews_all_time'] = int(all_time_match.group(2).replace(',', ''))
 
         try:
-            results['release_date'] = driver.find_element_by_css_selector('.release_date .date').text
+            results['release_date'] = dtparse(driver.find_element_by_css_selector('.release_date .date').text)
         except NoSuchElementException:
             # This app doesn't have a release date for some reason
             pass
