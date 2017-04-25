@@ -74,6 +74,17 @@ def scrape_store_page(app_id):
             driver.close()
             return results
 
+        try:
+            # If this succeeds, we've got a steam store error
+            error_element = driver.find_element_by_id('error_box')
+            error_text = error_element.find_element_by_class_name('error')
+            if error_text.text == 'This item is currently unavailable in your region':
+                # We can't see this app; ignore it
+                driver.close()
+                return results
+        except NoSuchElementException:
+            pass
+
         # Get the description first, since it tells us whether the app is streaming video
         # (which means we don't care about it)
         descriptions = driver.find_elements_by_class_name('game_area_description')
