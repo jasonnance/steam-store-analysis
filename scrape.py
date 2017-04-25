@@ -187,6 +187,10 @@ def scrape_store_page(app_id):
             raw_price = driver.find_element_by_class_name('game_purchase_price').text
             if raw_price in ('Free to Play', 'Free'):
                 price = 0
+            elif raw_price == 'Third-party':
+                # For all examples thus far, this has meant "free", but I don't think
+                # we can assume that if the source is a 3rd party
+                price = None
             else:
                 price = float(raw_price.replace('$', ''))
             results['full_price'] = price
