@@ -4,6 +4,7 @@ import os
 import re
 import datetime as dt
 import time
+import traceback
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException
@@ -45,139 +46,146 @@ def scrape_store_page(app_id):
     app_url = "{}/app/{}".format(store_base_url, app_id)
     driver.get(app_url)
 
-    if driver.current_url in (store_base_url, '{}/'.format(store_base_url)):
-        # We were redirected; the app doesn't have a store page.
-        driver.close()
-        return results
-
     try:
-        # If this succeeds, we need to pass through the age gate.
-        driver.find_element_by_id('agegate_box')
-
-        select_element = driver.find_element_by_id('ageYear')
-        # open year dialog
-        select_element.click()
-        # select correct year
-        select_element.find_element_by_css_selector('option[value="1993"]').click()
-        # close year dialog
-        select_element.click()
-        # submit the form
-        driver.find_element_by_id('agecheck_form').submit()
-    except NoSuchElementException:
-        # No age gate; we're good to continue
-        pass
-
-    # Get the description first, since it tells us whether the app is streaming video
-    # (which means we don't care about it)
-    descriptions = driver.find_elements_by_class_name('game_area_description')
-    for description in descriptions:
-        if description.text.startswith('ABOUT THIS GAME'):
-            results['is_dlc'] = False
-            results['long_description'] = description.text
-        elif description.text.startswith('ABOUT THIS CONTENT'):
-            results['is_dlc'] = True
-            results['long_description'] = description.text
-        elif description.text.startswith('ABOUT THIS SERIES'):
-            # This is streaming video; we don't care about it, so just return
+        if driver.current_url in (store_base_url, '{}/'.format(store_base_url)):
+            # We were redirected; the app doesn't have a store page.
             driver.close()
             return results
-    if 'long_description' not in results:
-        raise RuntimeError('Unable to parse description for app_id {}'.format(app_id))
 
-    results['game_name'] = (driver
-                            .find_element_by_class_name('apphub_AppName')
-                            .text)
-
-    try:
-        results['short_description'] = (driver
-                                        .find_element_by_class_name('game_description_snippet')
-                                        .text)
-    except NoSuchElementException:
-        # DLC doesn't have a short description
-        pass
-
-    reviews_texts = [element.get_attribute('data-store-tooltip')
-                     for element in (driver
-                                     .find_elements_by_class_name('user_reviews_summary_row')
-                                     )]
-
-    for text in reviews_texts:
-        thirty_day_match = THIRTY_DAY_REVIEW_REGEX.match(text)
-
-        if thirty_day_match:
-            results['pct_positive_reviews_last_30_days'] = int(thirty_day_match.group(1))
-            results['reviews_last_30_days'] = int(thirty_day_match.group(2).replace(',', ''))
-        else:
-            all_time_match = ALL_TIME_REVIEW_REGEX.match(text)
-
-            if all_time_match:
-                results['pct_positive_reviews_all_time'] = int(all_time_match.group(1))
-                results['reviews_all_time'] = int(all_time_match.group(2).replace(',', ''))
-
-    results['release_date'] = driver.find_element_by_css_selector('.release_date .date').text
-
-    # There's additional detail about VR stuff here, but we're not worried about that for now
-    details_text = driver.find_elements_by_css_selector('.details_block:not(.vrsupport)')[0].text
-    details_match = DETAILS_BOX_REGEX.match(details_text)
-    results['title'] = details_match.group(1)
-    raw_genre = details_match.group(2)
-    results['genres'] = raw_genre.split(', ')
-    results['developer'] = details_match.group(3)
-    results['publisher'] = details_match.group(4)
-
-    block_titles_texts = [element.text
-                          for element in (driver
-                                          .find_elements_by_class_name('block_title')
-                                          )]
-
-    for text in block_titles_texts:
-        num_achievements_match = NUM_ACHIEVEMENTS_REGEX.match(text)
-
-        if num_achievements_match:
-            results['num_achievements'] = int(num_achievements_match.group(1))
-
-    try:
-        results['metacritic_score'] = int(driver.find_element_by_class_name('score').text)
-    except NoSuchElementException:
-        # Some games don't have metascores
-        pass
-
-    try:
-        # Not on sale or Free to Play
-        raw_price = driver.find_element_by_class_name('game_purchase_price').text
-        if raw_price == 'Free to Play':
-            price = 0
-        else:
-            price = float(raw_price.replace('$', ''))
-        results['full_price'] = price
-    except NoSuchElementException:
         try:
-            # On sale
-            raw_price = driver.find_element_by_class_name('discount_original_price').text
-            results['full_price'] = float(raw_price.replace('$', ''))
+            # If this succeeds, we need to pass through the age gate.
+            driver.find_element_by_id('agegate_box')
+
+            select_element = driver.find_element_by_id('ageYear')
+            # open year dialog
+            select_element.click()
+            # select correct year
+            select_element.find_element_by_css_selector('option[value="1993"]').click()
+            # close year dialog
+            select_element.click()
+            # submit the form
+            driver.find_element_by_id('agecheck_form').submit()
         except NoSuchElementException:
-            # No price on the page
+            # No age gate; we're good to continue
             pass
 
-    results['game_details'] = []
-    game_details_elements = driver.find_elements_by_class_name('game_area_details_specs')
-    for element in game_details_elements:
-        results['game_details'].append(element.find_element_by_css_selector('a.name').text)
+        # Get the description first, since it tells us whether the app is streaming video
+        # (which means we don't care about it)
+        descriptions = driver.find_elements_by_class_name('game_area_description')
+        for description in descriptions:
+            if description.text.startswith('ABOUT THIS GAME'):
+                results['is_dlc'] = False
+                results['long_description'] = description.text
+            elif description.text.startswith('ABOUT THIS CONTENT'):
+                results['is_dlc'] = True
+                results['long_description'] = description.text
+            elif description.text.startswith('ABOUT THIS SERIES'):
+                # This is streaming video; we don't care about it, so just return
+                driver.close()
+                return results
+        if 'long_description' not in results:
+            raise RuntimeError('Unable to parse description for app_id {}'.format(app_id))
 
-    results['tags'] = []
-    try:
-        # Try to get the big list of tags if it's there
-        driver.find_element_by_css_selector('.app_tag.add_button').click()
-        tag_elements = driver.find_elements_by_css_selector('#app_tagging_modal a.app_tag')
-    except ElementNotVisibleException:
-        # Settle for the short list if not
-        tag_elements = driver.find_elements_by_css_selector('a.app_tag')
-    for element in tag_elements:
-        results['tags'].append(element.text)
+        results['game_name'] = (driver
+                                .find_element_by_class_name('apphub_AppName')
+                                .text)
 
-    driver.close()
+        try:
+            results['short_description'] = (driver
+                                            .find_element_by_class_name('game_description_snippet')
+                                            .text)
+        except NoSuchElementException:
+            # DLC doesn't have a short description
+            pass
 
-    return results
+        reviews_texts = [element.get_attribute('data-store-tooltip')
+                        for element in (driver
+                                        .find_elements_by_class_name('user_reviews_summary_row')
+                                        )]
+
+        for text in reviews_texts:
+            thirty_day_match = THIRTY_DAY_REVIEW_REGEX.match(text)
+
+            if thirty_day_match:
+                results['pct_positive_reviews_last_30_days'] = int(thirty_day_match.group(1))
+                results['reviews_last_30_days'] = int(thirty_day_match.group(2).replace(',', ''))
+            else:
+                all_time_match = ALL_TIME_REVIEW_REGEX.match(text)
+
+                if all_time_match:
+                    results['pct_positive_reviews_all_time'] = int(all_time_match.group(1))
+                    results['reviews_all_time'] = int(all_time_match.group(2).replace(',', ''))
+
+        results['release_date'] = driver.find_element_by_css_selector('.release_date .date').text
+
+        # There's additional detail about VR stuff here, but we're not worried about that for now
+        details_text = driver.find_elements_by_css_selector('.details_block:not(.vrsupport)')[0].text
+        details_match = DETAILS_BOX_REGEX.match(details_text)
+        results['title'] = details_match.group(1)
+        raw_genre = details_match.group(2)
+        results['genres'] = raw_genre.split(', ')
+        results['developer'] = details_match.group(3)
+        results['publisher'] = details_match.group(4)
+
+        block_titles_texts = [element.text
+                            for element in (driver
+                                            .find_elements_by_class_name('block_title')
+                                            )]
+
+        for text in block_titles_texts:
+            num_achievements_match = NUM_ACHIEVEMENTS_REGEX.match(text)
+
+            if num_achievements_match:
+                results['num_achievements'] = int(num_achievements_match.group(1))
+
+        try:
+            results['metacritic_score'] = int(driver.find_element_by_class_name('score').text)
+        except NoSuchElementException:
+            # Some games don't have metascores
+            pass
+
+        try:
+            # Not on sale or Free to Play
+            raw_price = driver.find_element_by_class_name('game_purchase_price').text
+            if raw_price == 'Free to Play':
+                price = 0
+            else:
+                price = float(raw_price.replace('$', ''))
+            results['full_price'] = price
+        except NoSuchElementException:
+            try:
+                # On sale
+                raw_price = driver.find_element_by_class_name('discount_original_price').text
+                results['full_price'] = float(raw_price.replace('$', ''))
+            except NoSuchElementException:
+                # No price on the page
+                pass
+
+        results['game_details'] = []
+        game_details_elements = driver.find_elements_by_class_name('game_area_details_specs')
+        for element in game_details_elements:
+            results['game_details'].append(element.find_element_by_css_selector('a.name').text)
+
+        results['tags'] = []
+        try:
+            # Try to get the big list of tags if it's there
+            driver.find_element_by_css_selector('.app_tag.add_button').click()
+            tag_elements = driver.find_elements_by_css_selector('#app_tagging_modal a.app_tag')
+        except ElementNotVisibleException:
+            # Settle for the short list if not
+            tag_elements = driver.find_elements_by_css_selector('a.app_tag')
+        for element in tag_elements:
+            results['tags'].append(element.text)
+
+        driver.close()
+
+        return results
+    except:
+        # Make sure our driver gets closed if we threw an error
+        # so we don't leave a million windows open
+        driver.close()
+        raise
+
 
 def insert_with_mapping(*, db, descrs, entity_table, pk_name, join_table, mapping, app_id, crawl_time):
     '''
@@ -221,16 +229,11 @@ def do_crawl(app_ids, db):
     db.begin()
     for app_id in tqdm(app_ids):
         try:
-            time.sleep(CRAWL_TIMEOUT)
             if should_quit:
                 break
 
-            try:
-                results = scrape_store_page(app_id)
-            except:
-                db.commit()
-                print("Failed crawl for ID {}".format(app_id))
-                raise
+            time.sleep(CRAWL_TIMEOUT)
+            results = scrape_store_page(app_id)
 
             crawl_time = dt.datetime.now()
             results['crawl_time'] = crawl_time
@@ -288,8 +291,13 @@ def do_crawl(app_ids, db):
                 )
 
         except KeyboardInterrupt:
-            # Finish this iteration before we exit
+            # Handle this without raising; want to make sure we get our commit
+            # in before exiting
             should_quit = True
+        except Exception as e:
+            print('Failed to load app ID {}; continuing'.format(app_id))
+            # Problem app; pass along our failure and continue to the next one
+            traceback.print_exc()
     db.commit()
 
 
