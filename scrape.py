@@ -66,6 +66,23 @@ def scrape_store_page(app_id):
         # No age gate; we're good to continue
         pass
 
+    # Get the description first, since it tells us whether the app is streaming video
+    # (which means we don't care about it)
+    descriptions = driver.find_elements_by_class_name('game_area_description')
+    for description in descriptions:
+        if description.text.startswith('ABOUT THIS GAME'):
+            results['is_dlc'] = False
+            results['long_description'] = description.text
+        elif description.text.startswith('ABOUT THIS CONTENT'):
+            results['is_dlc'] = True
+            results['long_description'] = description.text
+        elif description.text.startswith('ABOUT THIS SERIES'):
+            # This is streaming video; we don't care about it, so just return
+            driver.close()
+            return results
+    if 'long_description' not in results:
+        raise RuntimeError('Unable to parse description for app_id {}'.format(app_id))
+
     results['game_name'] = (driver
                             .find_element_by_class_name('apphub_AppName')
                             .text)
