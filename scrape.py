@@ -312,12 +312,8 @@ def run():
 
     missing_app_ids = [r['steam_app_id'] for r in db.query(missing_crawl_query)]
 
-    # TODO remove after we're done testing the crawl function
-    missing_app_ids = missing_app_ids[:1]
-
     do_crawl(missing_app_ids, db)
 
 
 if __name__ == '__main__':
     run()
-
