@@ -161,8 +161,13 @@ def scrape_store_page(app_id):
         results['game_details'].append(element.find_element_by_css_selector('a.name').text)
 
     results['tags'] = []
-    driver.find_element_by_css_selector('.app_tag.add_button').click()
-    tag_elements = driver.find_elements_by_css_selector('#app_tagging_modal a.app_tag')
+    try:
+        # Try to get the big list of tags if it's there
+        driver.find_element_by_css_selector('.app_tag.add_button').click()
+        tag_elements = driver.find_elements_by_css_selector('#app_tagging_modal a.app_tag')
+    except ElementNotVisibleException:
+        # Settle for the short list if not
+        tag_elements = driver.find_elements_by_css_selector('a.app_tag')
     for element in tag_elements:
         results['tags'].append(element.text)
 
