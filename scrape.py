@@ -49,6 +49,23 @@ def scrape_store_page(app_id):
         # We were redirected; the app doesn't have a store page.
         return results
 
+    try:
+        # If this succeeds, we need to pass through the age gate.
+        driver.find_element_by_id('agegate_box')
+
+        select_element = driver.find_element_by_id('ageYear')
+        # open year dialog
+        select_element.click()
+        # select correct year
+        select_element.find_element_by_css_selector('option[value="1993"]').click()
+        # close year dialog
+        select_element.click()
+        # submit the form
+        driver.find_element_by_id('agecheck_form').submit()
+    except NoSuchElementException:
+        # No age gate; we're good to continue
+        pass
+
     results['game_name'] = (driver
                             .find_element_by_class_name('apphub_AppName')
                             .text)
