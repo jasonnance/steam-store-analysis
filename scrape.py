@@ -6,7 +6,7 @@ import datetime as dt
 import time
 from tqdm import tqdm
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException
 
 # Number of seconds to sleep between crawls
 CRAWL_TIMEOUT = 10
