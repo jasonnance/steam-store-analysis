@@ -175,9 +175,9 @@ def scrape_store_page(app_id):
 
     return results
 
-def insert_with_mapping(*, descrs, entity_table, pk_name, join_table, mapping, app_id, crawl_time):
+def insert_with_mapping(*, db, descrs, entity_table, pk_name, join_table, mapping, app_id, crawl_time):
     '''
-    Given some list of description data, a table of entities, the name of the PK,
+    Given a db connection, some list of description data, a table of entities, the name of the PK,
     a many-to-many join table for the entities to game crawls,
     a mapping from descrs to entity table IDs, and an app_id/crawl_time,
     update the entity table/mapping if necessary and insert
@@ -189,7 +189,7 @@ def insert_with_mapping(*, descrs, entity_table, pk_name, join_table, mapping, a
         try:
             entity_id = mapping[descr]
         except KeyError:
-            entity_id = db[entity_table]
+            entity_id = db[entity_table].insert({'descr': descr})
             mapping[descr] = entity_id
 
         db[join_table].insert({
@@ -207,59 +207,76 @@ def do_crawl(app_ids, db):
     detail_mapping = {r['descr']: r['detail_id'] for r in db['steam_game_detail'].find()}
     genre_mapping = {r['descr']: r['genre_id'] for r in db['steam_genre'].find()}
 
+    # Add a handler here to allow us to gracefully save our work and quit
+    # if the user halts a crawl early via Ctrl + C.
+    # NOTE: since background jobs ignore SIGINT, this has no effect if
+    # the script is launched in the background; see
+    # http://stackoverflow.com/questions/1112343/how-do-i-capture-sigint-in-python#comment68802096_1112357
+    should_quit = False
+
     db.begin()
     for app_id in tqdm(app_ids):
         try:
-            results = scrape_store_page(app_id)
-        except:
-            db.commit()
-            print("Failed crawl for ID {}".format(app_id))
-            raise
+            if should_quit:
+                break
 
-        crawl_time = dt.datetime.now()
-        results['crawl_time'] = crawl_time
+            try:
+                results = scrape_store_page(app_id)
+            except:
+                db.commit()
+                print("Failed crawl for ID {}".format(app_id))
+                raise
 
-        # Pull the lists off before we insert the main crawl record.
-        tags = results['tags']
-        del results['tags']
-        details = results['game_details']
-        del results['game_details']
-        genres = results['genres']
-        del results['genres']
+            crawl_time = dt.datetime.now()
+            results['crawl_time'] = crawl_time
 
-        db['game_crawl'].insert(results)
+            # Pull the lists off before we insert the main crawl record.
+            tags = results['tags']
+            del results['tags']
+            details = results['game_details']
+            del results['game_details']
+            genres = results['genres']
+            del results['genres']
 
-        insert_with_mapping(
-            descrs=tags,
-            entity_table='steam_tag',
-            pk_name='tag_id',
-            join_table='game_crawl_tag',
-            mapping=tag_mapping,
-            app_id=app_id,
-            crawl_time=crawl_time
-        )
+            db['game_crawl'].insert(results)
 
-        insert_with_mapping(
-            descrs=details,
-            entity_table='steam_game_detail',
-            pk_name='detail_id',
-            join_table='game_crawl_detail',
-            mapping=detail_mapping,
-            app_id=app_id,
-            crawl_time=crawl_time
-        )
+            insert_with_mapping(
+                db=db,
+                descrs=tags,
+                entity_table='steam_tag',
+                pk_name='tag_id',
+                join_table='game_crawl_tag',
+                mapping=tag_mapping,
+                app_id=app_id,
+                crawl_time=crawl_time
+            )
 
-        insert_with_mapping(
-            descrs=genres,
-            entity_table='steam_genre',
-            pk_name='genre_id',
-            join_table='game_crawl_genre',
-            mapping=genre_mapping,
-            app_id=app_id,
-            crawl_time=crawl_time
-        )
+            insert_with_mapping(
+                db=db,
+                descrs=details,
+                entity_table='steam_game_detail',
+                pk_name='detail_id',
+                join_table='game_crawl_detail',
+                mapping=detail_mapping,
+                app_id=app_id,
+                crawl_time=crawl_time
+            )
 
-        time.sleep(CRAWL_TIMEOUT)
+            insert_with_mapping(
+                db=db,
+                descrs=genres,
+                entity_table='steam_genre',
+                pk_name='genre_id',
+                join_table='game_crawl_genre',
+                mapping=genre_mapping,
+                app_id=app_id,
+                crawl_time=crawl_time
+            )
+
+            time.sleep(CRAWL_TIMEOUT)
+        except KeyboardInterrupt:
+            # Finish this iteration before we exit
+            should_quit = True
     db.commit()
 
 
@@ -273,7 +290,7 @@ def run():
 
     # For now, just crawl the apps we don't already have
     missing_crawl_query = '''
-    SELECT steam_app_id
+    SELECT g.steam_app_id
     FROM game g
       LEFT JOIN game_crawl gc
         USING (steam_app_id)
