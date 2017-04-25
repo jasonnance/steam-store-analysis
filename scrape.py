@@ -136,7 +136,11 @@ def scrape_store_page(app_id):
         if num_achievements_match:
             results['num_achievements'] = int(num_achievements_match.group(1))
 
-    results['metacritic_score'] = int(driver.find_element_by_class_name('score').text)
+    try:
+        results['metacritic_score'] = int(driver.find_element_by_class_name('score').text)
+    except NoSuchElementException:
+        # Some games don't have metascores
+        pass
 
     try:
         # Not on sale or Free to Play
