@@ -26,6 +26,7 @@ CREATE TABLE game_crawl (
     num_achievements int,
     full_price real,
     long_description text,
+    metacritic_score int,
 
     CONSTRAINT game_crawl_pk PRIMARY KEY (steam_app_id, crawl_time),
     CONSTRAINT game_game_crawl_fk FOREIGN KEY (steam_app_id)

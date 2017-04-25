@@ -1,9 +1,12 @@
-from selenium import webdriver
 import requests
 import dataset
 import os
 import re
+import datetime as dt
+import time
 from tqdm import tqdm
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 
 # Number of seconds to sleep between crawls
 CRAWL_TIMEOUT = 10
@@ -36,7 +39,7 @@ def scrape_store_page(app_id):
     '''
     Extract all the information we can from the store page for a given app ID.
     '''
-    results = {}
+    results = {'steam_app_id': app_id}
     driver = webdriver.Chrome()
     store_base_url = "http://store.steampowered.com"
     app_url = "{}/app/{}".format(store_base_url, app_id)
@@ -92,11 +95,33 @@ def scrape_store_page(app_id):
         if num_achievements_match:
             results['num_achievements'] = int(num_achievements_match.group(1))
 
-    # TODO
-    # - full_price
-    # - long_description
-    # - game_details (ex. "Single-player", "Multi-player", etc)
-    # - tags (ex. "Strategy", "4X", "Space", etc)
+    results['metacritic_score'] = int(driver.find_element_by_class_name('score').text)
+
+    try:
+        # Not on sale or Free to Play
+        raw_price = driver.find_element_by_class_name('game_purchase_price').text
+        if raw_price == 'Free to Play':
+            price = 0
+        else:
+            price = float(raw_price.replace('$', ''))
+        results['full_price'] = price
+    except NoSuchElementException:
+        # On sale
+        raw_price = driver.find_element_by_class_name('discount_original_price').text
+        results['full_price'] = float(raw_price.replace('$', ''))
+
+    results['long_description'] = driver.find_element_by_class_name('game_area_description').text
+
+    results['game_details'] = []
+    game_details_elements = driver.find_elements_by_class_name('game_area_details_specs')
+    for element in game_details_elements:
+        results['game_details'].append(element.find_element_by_css_selector('a.name').text)
+
+    results['tags'] = []
+    driver.find_element_by_css_selector('.app_tag.add_button').click()
+    tag_elements = driver.find_elements_by_css_selector('#app_tagging_modal a.app_tag')
+    for element in tag_elements:
+        results['tags'].append(element.text)
 
     return results
 
@@ -105,16 +130,56 @@ def do_crawl(app_ids, db):
     Given a list of steam app IDs and a db connection, do a crawl for the app IDs
     and append the results to our list of crawls in the database.
     '''
-    for app_id in app_ids:
+    tag_mapping = {r['descr']: r['tag_id'] for r in db['steam_tag'].find()}
+    detail_mapping = {r['descr']: r['detail_id'] for r in db['steam_game_detail'].find()}
+
+    db.begin()
+    for app_id in tqdm(app_ids):
         try:
             results = scrape_store_page(app_id)
         except:
+            db.commit()
             print("Failed crawl for ID {}".format(app_id))
             raise
 
+        crawl_time = dt.datetime.now()
+        results['crawl_time'] = crawl_time
+
+        tags = results['tags']
+        del results['tags']
+        details = results['game_details']
+        del results['game_details']
+
         db['game_crawl'].insert(results)
 
+        for tag in tags:
+            try:
+                tag_id = tag_mapping[tag]
+            except KeyError:
+                tag_id = db['steam_tag'].insert({'descr': tag})
+                tag_mapping[tag] = tag_id
+
+            db['game_crawl_tag'].insert({
+                'steam_app_id': app_id,
+                'crawl_time': crawl_time,
+                'tag_id': tag_id
+            })
+
+        for detail in details:
+            try:
+                detail_id = detail_mapping[detail]
+            except KeyError:
+                detail_id = db['steam_game_detail'].insert({'descr': detail})
+                detail_mapping[detail] = detail_id
+
+            db['game_crawl_detail'].insert({
+                'steam_app_id': app_id,
+                'crawl_time': crawl_time,
+                'detail_id': detail_id
+            })
+
         time.sleep(CRAWL_TIMEOUT)
+    db.commit()
 
 
 def run():
