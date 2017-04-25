@@ -14,7 +14,7 @@ CRAWL_TIMEOUT = 10
 
 THIRTY_DAY_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews in the last 30 days')
 ALL_TIME_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews for this game')
-DETAILS_BOX_REGEX = re.compile(r'^Title: ([^\n]+)\nGenre: ([^\n]+)\nDeveloper: ([^\n]+)(?:\nPublisher: ([^\n]+))?')
+DETAILS_BOX_REGEX = re.compile(r'^Title: ([^\n]+)(?:\nGenre: ([^\n]+))?\nDeveloper: ([^\n]+)(?:\nPublisher: ([^\n]+))?')
 NUM_ACHIEVEMENTS_REGEX = re.compile(r'Includes ([,[0-9]+) Steam Achievements')
 
 def upsert_all_apps(db):
@@ -123,7 +123,8 @@ def scrape_store_page(app_id):
         details_match = DETAILS_BOX_REGEX.match(details_text)
         results['title'] = details_match.group(1)
         raw_genre = details_match.group(2)
-        results['genres'] = raw_genre.split(', ')
+        if raw_genre is not None:
+            results['genres'] = raw_genre.split(', ')
         results['developer'] = details_match.group(3)
         results['publisher'] = details_match.group(4)
 
