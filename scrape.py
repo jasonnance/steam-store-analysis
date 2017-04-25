@@ -88,9 +88,13 @@ def scrape_store_page(app_id):
                             .find_element_by_class_name('apphub_AppName')
                             .text)
 
-    results['short_description'] = (driver
-                                    .find_element_by_class_name('game_description_snippet')
-                                    .text)
+    try:
+        results['short_description'] = (driver
+                                        .find_element_by_class_name('game_description_snippet')
+                                        .text)
+    except NoSuchElementException:
+        # DLC doesn't have a short description
+        pass
 
     reviews_texts = [element.get_attribute('data-store-tooltip')
                      for element in (driver
