@@ -114,7 +114,7 @@ def scrape_store_page(app_id):
                 # This is computer software; ignore it
                 driver.close()
                 return results
-        if 'long_description' not in results:
+        if 'long_description' not in results and len(descriptions) > 0:
             raise RuntimeError('Unable to parse description for app_id {}'.format(app_id))
 
         results['game_name'] = (driver
