@@ -116,7 +116,11 @@ def scrape_store_page(app_id):
                     results['pct_positive_reviews_all_time'] = int(all_time_match.group(1))
                     results['reviews_all_time'] = int(all_time_match.group(2).replace(',', ''))
 
-        results['release_date'] = driver.find_element_by_css_selector('.release_date .date').text
+        try:
+            results['release_date'] = driver.find_element_by_css_selector('.release_date .date').text
+        except NoSuchElementException:
+            # This app doesn't have a release date for some reason
+            pass
 
         # There's additional detail about VR stuff here, but we're not worried about that for now
         details_text = driver.find_elements_by_css_selector('.details_block:not(.vrsupport)')[0].text
