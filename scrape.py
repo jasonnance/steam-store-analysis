@@ -221,6 +221,7 @@ def do_crawl(app_ids, db):
     db.begin()
     for app_id in tqdm(app_ids):
         try:
+            time.sleep(CRAWL_TIMEOUT)
             if should_quit:
                 break
 
@@ -277,7 +278,6 @@ def do_crawl(app_ids, db):
                 crawl_time=crawl_time
             )
 
-            time.sleep(CRAWL_TIMEOUT)
         except KeyboardInterrupt:
             # Finish this iteration before we exit
             should_quit = True
