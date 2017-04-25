@@ -235,48 +235,57 @@ def do_crawl(app_ids, db):
             crawl_time = dt.datetime.now()
             results['crawl_time'] = crawl_time
 
+            # Default to empty list if the results don't contain any of these
+            tags, details, genres = [], [], []
+
             # Pull the lists off before we insert the main crawl record.
-            tags = results['tags']
-            del results['tags']
-            details = results['game_details']
-            del results['game_details']
-            genres = results['genres']
-            del results['genres']
+            if 'tags' in results:
+                tags = results['tags']
+                del results['tags']
+            if 'game_details' in results:
+                details = results['game_details']
+                del results['game_details']
+            if 'genres' in results:
+                genres = results['genres']
+                del results['genres']
 
             db['game_crawl'].insert(results)
 
-            insert_with_mapping(
-                db=db,
-                descrs=tags,
-                entity_table='steam_tag',
-                pk_name='tag_id',
-                join_table='game_crawl_tag',
-                mapping=tag_mapping,
-                app_id=app_id,
-                crawl_time=crawl_time
-            )
+            if len(tags) > 0:
+                insert_with_mapping(
+                    db=db,
+                    descrs=tags,
+                    entity_table='steam_tag',
+                    pk_name='tag_id',
+                    join_table='game_crawl_tag',
+                    mapping=tag_mapping,
+                    app_id=app_id,
+                    crawl_time=crawl_time
+                )
 
-            insert_with_mapping(
-                db=db,
-                descrs=details,
-                entity_table='steam_game_detail',
-                pk_name='detail_id',
-                join_table='game_crawl_detail',
-                mapping=detail_mapping,
-                app_id=app_id,
-                crawl_time=crawl_time
-            )
+            if len(details) > 0:
+                insert_with_mapping(
+                    db=db,
+                    descrs=details,
+                    entity_table='steam_game_detail',
+                    pk_name='detail_id',
+                    join_table='game_crawl_detail',
+                    mapping=detail_mapping,
+                    app_id=app_id,
+                    crawl_time=crawl_time
+                )
 
-            insert_with_mapping(
-                db=db,
-                descrs=genres,
-                entity_table='steam_genre',
-                pk_name='genre_id',
-                join_table='game_crawl_genre',
-                mapping=genre_mapping,
-                app_id=app_id,
-                crawl_time=crawl_time
-            )
+            if len(genres) > 0:
+                insert_with_mapping(
+                    db=db,
+                    descrs=genres,
+                    entity_table='steam_genre',
+                    pk_name='genre_id',
+                    join_table='game_crawl_genre',
+                    mapping=genre_mapping,
+                    app_id=app_id,
+                    crawl_time=crawl_time
+                )
 
         except KeyboardInterrupt:
             # Finish this iteration before we exit
