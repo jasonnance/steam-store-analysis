@@ -155,8 +155,6 @@ def scrape_store_page(app_id):
         raw_price = driver.find_element_by_class_name('discount_original_price').text
         results['full_price'] = float(raw_price.replace('$', ''))
 
-    results['long_description'] = driver.find_element_by_class_name('game_area_description').text
-
     results['game_details'] = []
     game_details_elements = driver.find_elements_by_class_name('game_area_details_specs')
     for element in game_details_elements:
