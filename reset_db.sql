@@ -52,7 +52,7 @@ CREATE TABLE game_crawl_genre (
 
     CONSTRAINT game_crawl_genre_pk PRIMARY KEY (steam_app_id, crawl_time, genre_id),
     CONSTRAINT game_crawl_game_crawl_genre_fk FOREIGN KEY (steam_app_id, crawl_time)
-        REFERENCES game_crawl (steam_app_id, crawl_time),
+        REFERENCES game_crawl (steam_app_id, crawl_time) ON DELETE CASCADE,
     CONSTRAINT steam_genre_game_crawl_genre_fk FOREIGN KEY (genre_id)
         REFERENCES steam_genre (genre_id)
 );
@@ -76,7 +76,7 @@ CREATE TABLE game_crawl_tag (
 
     CONSTRAINT game_crawl_tag_pk PRIMARY KEY (steam_app_id, crawl_time, tag_id),
     CONSTRAINT game_crawl_game_crawl_tag_fk FOREIGN KEY (steam_app_id, crawl_time)
-        REFERENCES game_crawl (steam_app_id, crawl_time),
+        REFERENCES game_crawl (steam_app_id, crawl_time) ON DELETE CASCADE,
     CONSTRAINT steam_tag_game_crawl_tag_fk FOREIGN KEY (tag_id)
         REFERENCES steam_tag (tag_id)
 );
@@ -100,7 +100,7 @@ CREATE TABLE game_crawl_detail (
 
     CONSTRAINT game_crawl_detail_pk PRIMARY KEY (steam_app_id, crawl_time, detail_id),
     CONSTRAINT game_crawl_game_crawl_detail_fk FOREIGN KEY (steam_app_id, crawl_time)
-        REFERENCES game_crawl (steam_app_id, crawl_time),
+        REFERENCES game_crawl (steam_app_id, crawl_time) ON DELETE CASCADE,
     CONSTRAINT steam_game_detail_game_crawl_detail_fk FOREIGN KEY (detail_id)
         REFERENCES steam_game_detail (detail_id)
 );
