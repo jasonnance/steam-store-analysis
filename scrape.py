@@ -89,6 +89,14 @@ def scrape_store_page(driver, app_id):
         return results
 
     try:
+        # If this succeeds, the app has no store page; its store page
+        # redirects to its community hub instead.  Skip it.
+        driver.find_element_by_id('AppHubCards')
+        return results
+    except NoSuchElementException:
+        pass
+
+    try:
         # If this succeeds, we've got a steam store error
         error_element = driver.find_element_by_id('error_box')
         error_text = error_element.find_element_by_class_name('error')
