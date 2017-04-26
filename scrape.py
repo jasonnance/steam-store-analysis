@@ -350,8 +350,6 @@ def do_crawl(app_ids, db):
 
             # Ensure Postgres lets us continue by rolling back the current transaction
             db.rollback()
-
-            driver.close()
     driver.close()
 
 
