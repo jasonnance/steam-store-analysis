@@ -201,28 +201,35 @@ def scrape_store_page(driver, app_id):
         pass
 
     try:
-        # Not on sale or Free to Play
-        # Check within the "game_area" to avoid getting a DLC price
-        raw_price = driver.find_element_by_css_selector(
-            '.game_area_purchase_game .game_purchase_price'
-        ).text
-        if raw_price in ('Free to Play', 'Free'):
-            price = 0
-        elif raw_price == 'Third-party':
-            # For all examples thus far, this has meant "free", but I don't think
-            # we can assume that if the source is a 3rd party
-            price = None
-        else:
-            price = float(raw_price.replace('$', ''))
-        results['full_price'] = price
+        # Look for prices
+        # NOTE: we'll take the first price available on the page (since
+        # it's impossible to tell which one is for the actual game), so
+        # if a game is only available in a package, we'll record its price
+        # as the price of the package
+        game_area = driver.find_elements_by_class_name(
+            'game_area_purchase_game'
+        )[0]
     except NoSuchElementException:
+        # No price on the page
+        game_area = None
+
+    if game_area is not None:
         try:
+            # Check within the "game_area" to avoid getting a DLC price
+            raw_price = game_area.find_element_by_class_name('game_purchase_price').text
+            if raw_price in ('Free to Play', 'Free'):
+                price = 0
+            elif raw_price == 'Third-party':
+                # For all examples thus far, this has meant "free", but I don't think
+                # we can assume that if the source is a 3rd party
+                price = None
+            else:
+                price = float(raw_price.replace('$', ''))
+            results['full_price'] = price
+        except NoSuchElementException:
             # On sale
             raw_price = driver.find_element_by_class_name('discount_original_price').text
             results['full_price'] = float(raw_price.replace('$', ''))
-        except NoSuchElementException:
-            # No price on the page
-            pass
 
     results['game_details'] = []
     game_details_elements = driver.find_elements_by_class_name('game_area_details_specs')
