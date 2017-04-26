@@ -204,7 +204,7 @@ def scrape_store_page(driver, app_id):
         # Not on sale or Free to Play
         # Check within the "game_area" to avoid getting a DLC price
         raw_price = driver.find_element_by_css_selector(
-            '.game_area_purchase_game.game_purchase_price'
+            '.game_area_purchase_game .game_purchase_price'
         ).text
         if raw_price in ('Free to Play', 'Free'):
             price = 0
