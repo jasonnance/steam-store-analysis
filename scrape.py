@@ -206,9 +206,9 @@ def scrape_store_page(driver, app_id):
         # it's impossible to tell which one is for the actual game), so
         # if a game is only available in a package, we'll record its price
         # as the price of the package
-        game_area = driver.find_elements_by_class_name(
+        game_area = driver.find_element_by_class_name(
             'game_area_purchase_game'
-        )[0]
+        )
     except NoSuchElementException:
         # No price on the page
         game_area = None
