@@ -336,14 +336,15 @@ def do_crawl(app_ids, db):
             tags, details, genres = [], [], []
 
             # Pull the lists off before we insert the main crawl record.
+            # Use sets so we don't try to insert duplicates, if there are any.
             if 'tags' in results:
-                tags = results['tags']
+                tags = set(results['tags'])
                 del results['tags']
             if 'game_details' in results:
-                details = results['game_details']
+                details = set(results['game_details'])
                 del results['game_details']
             if 'genres' in results:
-                genres = results['genres']
+                genres = set(results['genres'])
                 del results['genres']
 
             db['game_crawl'].insert(results)
