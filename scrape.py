@@ -231,7 +231,7 @@ def scrape_store_page(driver, app_id):
         except NoSuchElementException:
             # On sale
             try:
-                raw_price = driver.find_element_by_class_name('discount_original_price').text
+                raw_price = game_area.find_element_by_class_name('discount_original_price').text
                 results['full_price'] = float(raw_price.replace('$', ''))
             except NoSuchElementException:
                 # There's a "game area" block, but it doesn't have a price
