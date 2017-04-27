@@ -19,6 +19,8 @@ ALL_TIME_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews fo
 DETAILS_BOX_REGEX = re.compile(r'^Title: ([^\n]+)(?:\nGenre: ([^\n]+))?(?:\nDeveloper: ([^\n]+))?(?:\nPublisher: ([^\n]+))?')
 NUM_ACHIEVEMENTS_REGEX = re.compile(r'Includes ([,[0-9]+) Steam Achievements')
 
+FREE_TO_PLAY_PHRASES = frozenset(('free to play', 'free', 'play for free!', 'free demo', 'play for free'))
+
 def upsert_all_apps(db):
     '''
     Get the full list of steam apps and upsert them in our database
@@ -217,7 +219,7 @@ def scrape_store_page(driver, app_id):
         try:
             # Check within the "game_area" to avoid getting a DLC price
             raw_price = game_area.find_element_by_class_name('game_purchase_price').text
-            if raw_price.lower() in ('free to play', 'free'):
+            if raw_price.lower() in FREE_TO_PLAY_PHRASES:
                 price = 0
             elif raw_price == 'Third-party':
                 # For all examples thus far, this has meant "free", but I don't think
