@@ -171,7 +171,18 @@ def scrape_store_page(driver, app_id):
                 results['reviews_all_time'] = int(all_time_match.group(2).replace(',', ''))
 
     try:
-        results['release_date'] = dtparse(driver.find_element_by_css_selector('.release_date .date').text)
+        raw_date = driver.find_element_by_css_selector('.release_date .date').text
+        try:
+            results['release_date'] = dtparse(raw_date)
+        except ValueError:
+            # Failed to parse the date; match it or raise an error
+            if raw_date == 'Coming Soon':
+                # Don't really have a better way to represent a missing
+                # release date than None
+                results['release_date'] = None
+            else:
+                raise ValueError('Unable to parse release date for app {}: {}'.format(
+                    app_id, raw_date))
     except NoSuchElementException:
         # This app doesn't have a release date for some reason
         pass
