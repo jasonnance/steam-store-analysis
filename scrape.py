@@ -22,6 +22,8 @@ NUM_ACHIEVEMENTS_REGEX = re.compile(r'Includes ([,[0-9]+) Steam Achievements')
 FREE_TO_PLAY_PHRASES = frozenset(('free to play', 'free', 'play for free!', 'free demo', 'play for free'))
 FREE_TO_PLAY_REGEXES = frozenset((re.compile('Play .* Demo'),))
 
+COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced', 'to be announced.'))
+
 def upsert_all_apps(db):
     '''
     Get the full list of steam apps and upsert them in our database
@@ -177,7 +179,7 @@ def scrape_store_page(driver, app_id):
             results['release_date'] = dtparse(raw_date)
         except ValueError:
             # Failed to parse the date; match it or raise an error
-            if raw_date == 'Coming Soon':
+            if raw_date.lower() in COMING_SOON_PHRASES:
                 # Don't really have a better way to represent a missing
                 # release date than None
                 results['release_date'] = None
