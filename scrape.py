@@ -22,7 +22,9 @@ NUM_ACHIEVEMENTS_REGEX = re.compile(r'Includes ([,[0-9]+) Steam Achievements')
 FREE_TO_PLAY_PHRASES = frozenset(('free to play', 'free', 'play for free!', 'free demo', 'play for free'))
 FREE_TO_PLAY_REGEXES = frozenset((re.compile('Play .* Demo'),))
 
-COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced', 'to be announced.'))
+COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced', 'to be announced.',
+                                 'tbd', 'when you least expect it'))
+
 
 def upsert_all_apps(db):
     '''
