@@ -241,7 +241,7 @@ def scrape_store_page(driver, app_id):
     results['game_details'] = []
     game_details_elements = driver.find_elements_by_class_name('game_area_details_specs')
     for element in game_details_elements:
-        results['game_details'].append(element.find_element_by_css_selector('a.name').text)
+        results['game_details'].append(element.find_element_by_css_selector('.name').text)
 
     results['tags'] = []
     try:
