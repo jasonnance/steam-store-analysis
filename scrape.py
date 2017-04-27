@@ -25,6 +25,20 @@ FREE_TO_PLAY_REGEXES = frozenset((re.compile('Play .* Demo'),))
 COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced', 'to be announced.',
                                  'tbd', 'when you least expect it'))
 
+# Some release dates are vague ex. "Summer 2017" or "Q2 2016"; map a season/quarter to a month so Python
+# can parse the date
+SEASON_MONTH_MAPPING = {
+    "summer": "july",
+    "spring": "april",
+    "winter": "january",
+    "fall": "october",
+    "q1": "february",
+    "q2": "may",
+    "q3": "august",
+    "q4": "november",
+}
+
+YEAR_REGEX = re.compile(r'(\d{4})')
 
 def upsert_all_apps(db):
     '''
@@ -177,6 +191,12 @@ def scrape_store_page(driver, app_id):
 
     try:
         raw_date = driver.find_element_by_css_selector('.release_date .date').text
+
+        # Replace seasons with months if needed
+        for season, month in SEASON_MONTH_MAPPING.items():
+            if season in raw_date.lower():
+                raw_date = raw_date.lower().replace(season, month)
+
         try:
             results['release_date'] = dtparse(raw_date)
         except ValueError:
@@ -185,6 +205,9 @@ def scrape_store_page(driver, app_id):
                 # Don't really have a better way to represent a missing
                 # release date than None
                 results['release_date'] = None
+            # Failing everything else, try to just parse a year out and use that
+            elif YEAR_REGEX.search(raw_date):
+                results['release_date'] = dtparse(YEAR_REGEX.search(raw_date).group(1))
             else:
                 raise ValueError('Unable to parse release date for app {}: {}'.format(
                     app_id, raw_date))
