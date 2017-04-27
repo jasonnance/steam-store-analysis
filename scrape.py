@@ -134,6 +134,9 @@ def scrape_store_page(driver, app_id):
         elif description.text.startswith('ABOUT THIS SOFTWARE'):
             # This is computer software; ignore it
             return results
+        elif description.text.startswith('ABOUT THIS VIDEO'):
+            # Video content; ignore it
+            return results
     if 'long_description' not in results and len(descriptions) > 0:
         raise RuntimeError('Unable to parse description for app_id {}'.format(app_id))
 
