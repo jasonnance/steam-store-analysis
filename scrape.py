@@ -59,18 +59,12 @@ def upsert_all_apps(db):
 
     db.commit()
 
-def scrape_store_page(driver, app_id):
+def pass_through_age_gate(driver):
     '''
-    Extract all the information we can from the store page for a given app ID.
+    Click through steam's age gate (asking when our birthday is)
 
-    Use the given driver so we don't have to worry about closing it when we exit.
+    Return value: whether we found an age gate
     '''
-    # TODO (maybe): add "ignore_reason" field to track why we skipped an app
-    results = {'steam_app_id': app_id}
-    store_base_url = "http://store.steampowered.com"
-    app_url = "{}/app/{}".format(store_base_url, app_id)
-    driver.get(app_url)
-
     try:
         # If this succeeds, we need to pass through the age gate.
         driver.find_element_by_id('agegate_box')
@@ -84,10 +78,17 @@ def scrape_store_page(driver, app_id):
         select_element.click()
         # submit the form
         driver.find_element_by_id('agecheck_form').submit()
+        return True
     except NoSuchElementException:
         # No age gate; we're good to continue
-        pass
+        return False
 
+def pass_through_nsfw_gate(driver):
+    '''
+    Click through steam's nsfw gate ("content may be inappropriate for viewing at work")
+
+    Return value: whether we found an NSFW gate
+    '''
     try:
         # If this succeeds, we need to click on the "continue" button to tell
         # steam we're okay with seeing NSFW content.
@@ -98,9 +99,34 @@ def scrape_store_page(driver, app_id):
                 '.agegate_text_container.btns > a.btn_grey_white_innerfade:first-child'
             )
             .click())
+
+        return True
     except NoSuchElementException:
         # No NSFW gate; we're good to continue
-        pass
+        return False
+
+
+
+def scrape_store_page(driver, app_id):
+    '''
+    Extract all the information we can from the store page for a given app ID.
+
+    Use the given driver so we don't have to worry about closing it when we exit.
+    '''
+    # TODO (maybe): add "ignore_reason" field to track why we skipped an app
+    results = {'steam_app_id': app_id}
+    store_base_url = "http://store.steampowered.com"
+    app_url = "{}/app/{}".format(store_base_url, app_id)
+    driver.get(app_url)
+
+    # We may have to pass through multiple gates; keep going until
+    # the page doesn't match either gate
+    while True:
+        age_gate_found = pass_through_age_gate(driver)
+        nsfw_gate_found = pass_through_nsfw_gate(driver)
+
+        if not (age_gate_found or nsfw_gate_found):
+            break
 
     if driver.current_url in (store_base_url, '{}/'.format(store_base_url)):
         # We were redirected; the app doesn't have a store page.
