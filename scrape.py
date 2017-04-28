@@ -134,6 +134,9 @@ def scrape_store_page(driver, app_id):
     elif 'store.steampowered.com/video' in driver.current_url:
         # This is a trailer for something else; we'll get the actual app later.
         return results
+    elif 'store.steampowered.com/sale' in driver.current_url:
+        # This redirects to a store sale page for some reason; ignore it.
+        return results
 
     try:
         # If this succeeds, the app has no store page; its store page
