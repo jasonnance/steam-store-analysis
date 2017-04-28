@@ -173,6 +173,11 @@ def scrape_store_page(driver, app_id):
         elif description.text.startswith('ABOUT THIS CONTENT'):
             results['is_dlc'] = True
             results['long_description'] = description.text
+        elif description.text.startswith('FEATURE LIST'):
+            # This has always been DLC, from what I've seen, but I don't
+            # think we can assume that
+            results['is_dlc'] = None
+            results['long_description'] = description.text
         elif description.text.startswith('ABOUT THIS SERIES'):
             # This is streaming video; we don't care about it, so just return
             return results
