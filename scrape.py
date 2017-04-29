@@ -20,7 +20,7 @@ DETAILS_BOX_REGEX = re.compile(r'^Title: ([^\n]+)(?:\nGenre: ([^\n]+))?(?:\nDeve
 NUM_ACHIEVEMENTS_REGEX = re.compile(r'Includes ([,[0-9]+) Steam Achievements')
 
 FREE_TO_PLAY_PHRASES = frozenset(('free to play', 'free', 'play for free!', 'free demo', 'play for free',
-                                  'free mod', 'play now'))
+                                  'free mod', 'play now', 'install theme'))
 FREE_TO_PLAY_REGEXES = frozenset((re.compile('Play .* Demo'),))
 
 COMING_SOON_PHRASES = frozenset(('coming soon', 'coming soon...', 'coming soon!',
