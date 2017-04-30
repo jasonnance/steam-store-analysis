@@ -23,10 +23,13 @@ FREE_TO_PLAY_PHRASES = frozenset(('free to play', 'free', 'play for free!', 'fre
                                   'free mod', 'play now', 'install theme'))
 FREE_TO_PLAY_REGEXES = frozenset((re.compile('Play .* Demo'),))
 
-COMING_SOON_PHRASES = frozenset(('coming soon', 'coming soon...', 'coming soon!',
-                                 'to be announced', 'to be announced.',
+# NOTE: Release dates will have punctuation removed before checking
+# against these phrases
+COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced'
                                  'tbd', 'when you least expect it', 'tba',
-                                 'Скоро'))
+                                 'скоро', 'not yet available', 'early access soon',
+                                 'eventually', 'coming this year', 'alpha now available',
+                                 'soon',))
 
 # Some release dates are vague ex. "Summer 2017" or "Q2 2016"; map a season/quarter to a month so Python
 # can parse the date
@@ -61,6 +64,13 @@ def upsert_all_apps(db):
         }, keys=['app_id'])
 
     db.commit()
+
+def clean_release_str(str_):
+    '''
+    Apply some cleaning to a string which we've already determined isn't a date in order
+    to more conveniently match it to a list of known phrases
+    '''
+    return str_.lower().replace('!', '').replace('.', '').replace('?', '')
 
 def pass_through_age_gate(driver):
     '''
@@ -241,7 +251,7 @@ def scrape_store_page(driver, app_id):
             results['release_date'] = dtparse(raw_date)
         except ValueError:
             # Failed to parse the date; match it or raise an error
-            if raw_date.lower() in COMING_SOON_PHRASES:
+            if clean_release_str(raw_date) in COMING_SOON_PHRASES:
                 # Don't really have a better way to represent a missing
                 # release date than None
                 results['release_date'] = None
