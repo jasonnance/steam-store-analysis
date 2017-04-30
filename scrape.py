@@ -29,7 +29,7 @@ COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced'
                                  'tbd', 'when you least expect it', 'tba',
                                  'скоро', 'not yet available', 'early access soon',
                                  'eventually', 'coming this year', 'alpha now available',
-                                 'soon',))
+                                 'soon', 'to be announced', 'early access'))
 
 # Some release dates are vague ex. "Summer 2017" or "Q2 2016"; map a season/quarter to a month so Python
 # can parse the date
@@ -70,7 +70,8 @@ def clean_release_str(str_):
     Apply some cleaning to a string which we've already determined isn't a date in order
     to more conveniently match it to a list of known phrases
     '''
-    return str_.lower().replace('!', '').replace('.', '').replace('?', '')
+    return (str_.lower().strip()
+            .replace('!', '').replace('.', '').replace('?', ''))
 
 def pass_through_age_gate(driver):
     '''
