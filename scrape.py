@@ -25,11 +25,14 @@ FREE_TO_PLAY_REGEXES = frozenset((re.compile('Play .* Demo'),))
 
 # NOTE: Release dates will have punctuation removed before checking
 # against these phrases
-COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced'
+COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced',
                                  'tbd', 'when you least expect it', 'tba',
                                  'скоро', 'not yet available', 'early access soon',
                                  'eventually', 'coming this year', 'alpha now available',
-                                 'soon', 'to be announced', 'early access'))
+                                 'soon', 'early access', 'tba - add to your wishlist',
+                                 'sign up for the close alpha', 'early access coming soon',
+                                 'when its ready', 'free alpha', 'before the second apocalypse',
+                                 'soon™', 'when it is finished',))
 
 # Some release dates are vague ex. "Summer 2017" or "Q2 2016"; map a season/quarter to a month so Python
 # can parse the date
@@ -71,7 +74,8 @@ def clean_release_str(str_):
     to more conveniently match it to a list of known phrases
     '''
     return (str_.lower().strip()
-            .replace('!', '').replace('.', '').replace('?', ''))
+            .replace('!', '').replace('.', '').replace('?', '')
+            .replace("'", ''))
 
 def pass_through_age_gate(driver):
     '''
