@@ -8,11 +8,13 @@ import time
 import traceback
 from tqdm import tqdm
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException
+from selenium.common.exceptions import NoSuchElementException, ElementNotVisibleException, TimeoutException
 from dateutil.parser import parse as dtparse
 
 # Number of seconds to sleep between crawls
 CRAWL_TIMEOUT = 10
+# Number of timeouts from steam after which we take a long nap (crawl_timeout * 100)
+STEAM_TIMEOUT_THRESHOLD = 5
 
 THIRTY_DAY_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews in the last 30 days')
 ALL_TIME_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews for this game')
@@ -400,6 +402,9 @@ def do_crawl(app_ids, db):
     # closing it for each app
     driver = webdriver.Chrome()
 
+    # Keep track of the number of times steam has timed out our request
+    steam_timeouts = 0
+
     for app_id in tqdm(app_ids):
         try:
             db.begin()
@@ -407,7 +412,15 @@ def do_crawl(app_ids, db):
                 break
 
             time.sleep(CRAWL_TIMEOUT)
-            results = scrape_store_page(driver, app_id)
+            try:
+                results = scrape_store_page(driver, app_id)
+            except TimeoutException:
+                steam_timeouts += 1
+                if steam_timeouts >= STEAM_TIMEOUT_THRESHOLD:
+                    print('Reached timeout threshold of {}; taking a long nap.'.format(
+                        STEAM_TIMEOUT_THRESHOLD))
+                    time.sleep(CRAWL_TIMEOUT * 100)
+                continue
 
             crawl_time = dt.datetime.now()
             results['crawl_time'] = crawl_time
