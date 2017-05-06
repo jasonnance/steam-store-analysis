@@ -105,4 +105,38 @@ CREATE TABLE game_crawl_detail (
         REFERENCES steam_game_detail (detail_id)
 );
 
+DROP VIEW IF EXISTS game_crawl_view CASCADE;
 
+CREATE VIEW game_crawl_view AS
+WITH game_genres AS (
+  SELECT gcg.steam_app_id, array_agg(sg.descr) AS genres
+  FROM game_crawl_genre gcg
+    JOIN steam_genre sg
+      USING (genre_id)
+  GROUP BY gcg.steam_app_id
+), game_details AS (
+  SELECT gcd.steam_app_id, array_agg(sgd.descr) AS details
+  FROM game_crawl_detail gcd
+    JOIN steam_game_detail sgd
+      USING (detail_id)
+  GROUP BY gcd.steam_app_id
+), game_tags AS (
+  SELECT gct.steam_app_id, array_agg(st.descr) AS tags
+  FROM game_crawl_tag gct
+    JOIN steam_tag st
+      USING (tag_id)
+  GROUP BY gct.steam_app_id
+)
+SELECT
+  gc.*,
+  gg.genres,
+  gd.details,
+  gt.tags
+FROM
+  game_crawl gc
+    LEFT JOIN game_genres gg
+      USING (steam_app_id)
+    LEFT JOIN game_details gd
+      USING (steam_app_id)
+    LEFT JOIN game_tags gt
+      USING (steam_app_id);
