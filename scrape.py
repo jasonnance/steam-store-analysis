@@ -34,7 +34,8 @@ COMING_SOON_PHRASES = frozenset(('coming soon', 'to be announced',
                                  'soon', 'early access', 'tba - add to your wishlist',
                                  'sign up for the close alpha', 'early access coming soon',
                                  'when its ready', 'free alpha', 'before the second apocalypse',
-                                 'soon™', 'when it is finished',))
+                                 'soon™', 'when it is finished', 'when the time comes', 'when its done',
+                                 'wishlist to get notified', ))
 
 # Some release dates are vague ex. "Summer 2017" or "Q2 2016"; map a season/quarter to a month so Python
 # can parse the date
@@ -265,6 +266,9 @@ def scrape_store_page(driver, app_id):
             # Failing everything else, try to just parse a year out and use that
             elif YEAR_REGEX.search(raw_date):
                 results['release_date'] = dtparse(YEAR_REGEX.search(raw_date).group(1))
+            elif raw_date.lower().startswith('this'):
+                results['release_date'] = dtparse((raw_date.lower().replace('this', '')
+                                                   .strip() + ' {}'.format(dt.datetime.now().year)))
             else:
                 raise ValueError('Unable to parse release date for app {}: {}'.format(
                     app_id, raw_date))
