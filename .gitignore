@@ -1,3 +1,6 @@
+Analysis/models/*
+!Analysis/models/README.md
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
