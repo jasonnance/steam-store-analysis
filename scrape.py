@@ -18,7 +18,10 @@ STEAM_TIMEOUT_THRESHOLD = 5
 
 THIRTY_DAY_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews in the last 30 days')
 ALL_TIME_REVIEW_REGEX = re.compile(r'^([0-9]+)% of the ([,0-9]+) user reviews for this game')
-DETAILS_BOX_REGEX = re.compile(r'^Title: ([^\n]+)(?:\nGenre: ([^\n]+))?(?:\nDeveloper: ([^\n]+))?(?:\nPublisher: ([^\n]+))?')
+DETAILS_BOX_REGEX = re.compile(r'^Title: ([^\n]+)'
+                               r'(?:\nGenre: ([^\n]+))?'
+                               r'(?:\nDeveloper: ([^\n]+))?'
+                               r'(?:\nPublisher: ([^\n]+))?')
 NUM_ACHIEVEMENTS_REGEX = re.compile(r'Includes ([,[0-9]+) Steam Achievements')
 
 FREE_TO_PLAY_PHRASES = frozenset(('free to play', 'free', 'play for free!', 'free demo', 'play for free',
@@ -52,6 +55,7 @@ SEASON_MONTH_MAPPING = {
 
 YEAR_REGEX = re.compile(r'(\d{4})')
 
+
 def upsert_all_apps(db):
     '''
     Get the full list of steam apps and upsert them in our database
@@ -71,6 +75,7 @@ def upsert_all_apps(db):
 
     db.commit()
 
+
 def clean_release_str(str_):
     '''
     Apply some cleaning to a string which we've already determined isn't a date in order
@@ -79,6 +84,7 @@ def clean_release_str(str_):
     return (str_.lower().strip()
             .replace('!', '').replace('.', '').replace('?', '')
             .replace("'", ''))
+
 
 def pass_through_age_gate(driver):
     '''
@@ -104,6 +110,7 @@ def pass_through_age_gate(driver):
         # No age gate; we're good to continue
         return False
 
+
 def pass_through_nsfw_gate(driver):
     '''
     Click through steam's nsfw gate ("content may be inappropriate for viewing at work")
@@ -125,7 +132,6 @@ def pass_through_nsfw_gate(driver):
     except NoSuchElementException:
         # No NSFW gate; we're good to continue
         return False
-
 
 
 def scrape_store_page(driver, app_id):
@@ -230,9 +236,8 @@ def scrape_store_page(driver, app_id):
         pass
 
     reviews_texts = [element.get_attribute('data-store-tooltip')
-                    for element in (driver
-                                    .find_elements_by_class_name('user_reviews_summary_row')
-                                    )]
+                     for element in (driver
+                                     .find_elements_by_class_name('user_reviews_summary_row'))]
 
     for text in reviews_texts:
         thirty_day_match = THIRTY_DAY_REVIEW_REGEX.match(text)
@@ -287,9 +292,8 @@ def scrape_store_page(driver, app_id):
     results['publisher'] = details_match.group(4)
 
     block_titles_texts = [element.text
-                        for element in (driver
-                                        .find_elements_by_class_name('block_title')
-                                        )]
+                          for element in (driver
+                                          .find_elements_by_class_name('block_title'))]
 
     for text in block_titles_texts:
         num_achievements_match = NUM_ACHIEVEMENTS_REGEX.match(text)
@@ -359,7 +363,6 @@ def scrape_store_page(driver, app_id):
     for element in tag_elements:
         results['tags'].append(element.text)
 
-
     return results
 
 
@@ -385,6 +388,7 @@ def insert_with_mapping(*, db, descrs, entity_table, pk_name, join_table, mappin
             'crawl_time': crawl_time,
             pk_name: entity_id,
         })
+
 
 def do_crawl(app_ids, db):
     '''
